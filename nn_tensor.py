@@ -30,7 +30,7 @@ class Linear(Module):
   def __repr__(self):
     return f"{'ReLU' if self.non_lin else 'Linear'}Layer({self.w.data.shape[0]}, {self.w.data.shape[1]})"
 
-class Model(Module):
+class MLP_Tensor(Module):
   def __init__(self, n_in, n_outs):
     sz = [n_in] + n_outs
     self.layers = []
