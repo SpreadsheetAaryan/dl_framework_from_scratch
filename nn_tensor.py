@@ -2,6 +2,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+from engine_tensor import Tensor
 
 class Module:
   def zero_grad(self):
