@@ -11,7 +11,7 @@ class Module:
   def parameters(self):
     return []
 
-class Layer(Module):
+class Linear(Module):
   def __init__(self, n_in, n_out, non_lin=True):
     self.w = Tensor((np.random.uniform(low=-1, high=1, size=(n_in, n_out))), requires_grad=True)
     self.b = Tensor((np.random.uniform(low=-1, high=1, size=(1, n_out))), requires_grad=True)
@@ -30,7 +30,7 @@ class Layer(Module):
   def __repr__(self):
     return f"{'ReLU' if self.non_lin else 'Linear'}Layer({self.w.data.shape[0]}, {self.w.data.shape[1]})"
 
-class MLP(Module):
+class Model(Module):
   def __init__(self, n_in, n_outs):
     sz = [n_in] + n_outs
     self.layers = []
