@@ -46,7 +46,7 @@ class Layer(Module):
   def __repr__(self):
     return f"Layer of [{', '.join(str(n) for n in self.neurons)}]"
 
-class MLP(Module):
+class MLP_Scalar(Module):
   def __init__(self, n_in, n_outs):
     sz = [n_in] + n_outs
     self.layers = []
