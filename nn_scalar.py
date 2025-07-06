@@ -1,7 +1,7 @@
 import math
 import numpy as np
 import random
-from engine_scalar import Value
+from dl_framework_from_scratch.engine_scalar import Value
 
 class Module:
   
