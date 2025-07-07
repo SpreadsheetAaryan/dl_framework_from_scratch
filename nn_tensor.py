@@ -38,7 +38,7 @@ class MLP_Tensor(Module):
 
     for i in range(len(n_outs)):
       non_lin_flag = (i != len(n_outs) - 1)
-      self.layers.append(Layer(sz[i], sz[i+1], non_lin=non_lin_flag))
+      self.layers.append(Linear(sz[i], sz[i+1], non_lin=non_lin_flag))
 
   def __call__(self, x):
     for layer in self.layers:
