@@ -2,7 +2,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import random
-from dl_framework_from_scratch.engine_scalar import Tensor
+from dl_framework_from_scratch.engine_tensor import Tensor
 
 class Module:
   def zero_grad(self):
