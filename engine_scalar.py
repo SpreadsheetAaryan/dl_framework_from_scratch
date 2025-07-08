@@ -65,7 +65,6 @@ class Value:
     out = Value(t, (self, ), 'tanh')
 
     def _backward():
-      # Derivative of tanh(x) is 1 - tanh^2(x)
       self.grad += (1 - t**2) * out.grad
     out._backward = _backward
     return out
@@ -74,7 +73,6 @@ class Value:
     out = Value((self.data if self.data >= 0 else 0), (self, ), 'ReLU')
 
     def _backward():
-      # Derivative of ReLU(x) is 1 for positive, 0 for non-positive
       self.grad += (out.data > 0) * out.grad
     out._backward = _backward
     return out
@@ -83,7 +81,6 @@ class Value:
     out = Value(math.exp(self.data), (self, ), 'exp')
 
     def _backward():
-      # Derivative of e^x is e^x
       self.grad += out.data * out.grad
     out._backward = _backward
     return out
@@ -92,16 +89,15 @@ class Value:
     topo = []
     visited = set()
 
-    # Recursively build graph in topological order
     def build_topo(v):
       if v not in visited:
         visited.add(v)
         for child in v._prev:
           build_topo(child)
-        topo.append(v) # Add node after its children
+        topo.append(v) 
 
-    build_topo(self) # Start graph build from current node
+    build_topo(self) 
 
-    self.grad = 1.0 # Initialize gradient of the output node to 1 (dL/dL = 1)
+    self.grad = 1.0 
     for node in reversed(topo):
-      node._backward() # Call local backward function for each node
+      node._backward() 
