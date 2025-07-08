@@ -23,10 +23,23 @@ class Tensor:
 
     if requires_grad:
       def _backward():
-        if self.requires_grad:
-          self.grad += np.sum(out.grad, axis=0)
-        if other.requires_grad:
-          other.grad += np.sum(out.grad, axis=0)
+        
+          grad_for_self = out.grad
+          for i, dim_out in enumerate(out.data.shape):
+              if i >= len(self.data.shape) or self.data.shape[i] == 1 and dim_out > 1:
+                  grad_for_self = np.sum(grad_for_self, axis=i, keepdims=True)
+          grad_for_self = np.reshape(grad_for_self, self.data.shape)
+
+          grad_for_other = out.grad
+          for i, dim_out in enumerate(out.data.shape):
+              if i >= len(other.data.shape) or other.data.shape[i] == 1 and dim_out > 1:
+                  grad_for_other = np.sum(grad_for_other, axis=i, keepdims=True)
+          grad_for_other = np.reshape(grad_for_other, other.data.shape)
+
+          if self.requires_grad:
+              self.grad += grad_for_self
+          if other.requires_grad:
+              other.grad += grad_for_other
 
       out._backward = _backward
     return out
@@ -41,10 +54,23 @@ class Tensor:
 
     if requires_grad:
       def _backward():
-        if self.requires_grad:
-          self.grad += other.data * out.grad
-        if other.requires_grad:
-          other.grad += self.data * out.grad
+        
+          grad_for_self = other.data * out.grad
+          for i, dim_out in enumerate(out.data.shape):
+              if i >= len(self.data.shape) or self.data.shape[i] == 1 and dim_out > 1:
+                  grad_for_self = np.sum(grad_for_self, axis=i, keepdims=True)
+          grad_for_self = np.reshape(grad_for_self, self.data.shape)
+
+          grad_for_other = self.data * out.grad
+          for i, dim_out in enumerate(out.data.shape):
+              if i >= len(other.data.shape) or other.data.shape[i] == 1 and dim_out > 1:
+                  grad_for_other = np.sum(grad_for_other, axis=i, keepdims=True)
+          grad_for_other = np.reshape(grad_for_other, other.data.shape)
+
+          if self.requires_grad:
+              self.grad += grad_for_self
+          if other.requires_grad:
+              other.grad += grad_for_other
 
       out._backward = _backward
     return out
