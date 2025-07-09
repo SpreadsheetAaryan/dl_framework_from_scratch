@@ -15,8 +15,8 @@ class Module:
 class Neuron(Module):
   
   def __init__(self, n_in, non_lin=True):
-    self.w = [Value(random.uniform(-1, 1)) for _ in range(n_in)]
-    self.b = Value(random.uniform(-1, 1))
+    self.w = [Value(random.uniform(-0.1, 0.1)) for _ in range(n_in)]
+    self.b = Value(random.uniform(-0.1, 0.1))
     self.non_lin = non_lin 
 
   def __call__(self, x):
