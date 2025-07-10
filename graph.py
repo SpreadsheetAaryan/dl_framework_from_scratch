@@ -1,10 +1,9 @@
 from graphviz import Digraph
 
 def trace(root):
-  # builds a set of all nodes and edges in a graph
     nodes, edges = set(), set()
     def build(v):
-        if v not in nodes: # Corrected from 'not in not'
+        if v not in nodes: 
             nodes.add(v)
             for child in v._prev:
                 edges.add((child, v))
@@ -19,7 +18,7 @@ def draw_dot_scalar(root, format='svg', rankdir='LR'):
     """
     assert rankdir in ['LR', 'TB']
     nodes, edges = trace(root)
-    dot = Digraph(format=format, graph_attr={'rankdir': rankdir}) #, node_attr={'rankdir': 'TB'})
+    dot = Digraph(format=format, graph_attr={'rankdir': rankdir}) 
 
     for n in nodes:
         dot.node(name=str(id(n)), label = "{ %s | data %.4f | grad %.4f }" % (n.label, n.data, n.grad), shape='record')
