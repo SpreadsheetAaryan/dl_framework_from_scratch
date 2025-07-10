@@ -86,10 +86,11 @@ class Value:
     return out
 
   def ln(self):
-    out = Value(math.log(self.data), (self, ), 'ln')
+    x = max(self.data, 1e-12)
+    out = Value(math.log(x), (self, ), 'ln')
 
     def _backward():
-      self.grad += (1 / self.data) * out.grad
+      self.grad += (1 / x) * out.grad
     out._backward = _backward
     return out
 
