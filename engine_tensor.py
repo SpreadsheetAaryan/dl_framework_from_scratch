@@ -142,6 +142,18 @@ class Tensor:
       out._backward = _backward
     return out
 
+  def ln(self):
+    requires_grad = self.requires_grad
+    out = Tensor(np.log(self.data), (self, ), 'ln', requires_grad=requires_grad)
+
+    if requires_grad:
+      def _backward():
+        if self.requires_grad:
+          self.grad += (1 / out.data) * out.grad
+
+      out._backward = _backward
+    return out
+
   def tanh(self):
     requires_grad = self.requires_grad
     out = Tensor((np.tanh(self.data)), (self, ), 'tanh', requires_grad=requires_grad)
