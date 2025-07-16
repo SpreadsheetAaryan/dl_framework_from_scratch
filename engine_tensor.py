@@ -161,6 +161,30 @@ class Tensor:
       out._backward = _backward
     return out
 
+  def max(self, axis=None, keepdims=False):
+    requires_grad = self.requires_grad
+    out_data = np.max(self.data, axis=axis, keepdims=keepdims)
+    out = Tensor(out_data, (self,), 'max', requires_grad=requires_grad)
+
+    if requires_grad:
+        def _backward():
+            if self.requires_grad:
+                grad_to_add = out.grad
+                if axis is not None and not keepdims:
+                    if isinstance(axis, int):
+                        grad_to_add = np.expand_dims(grad_to_add, axis=axis)
+                    elif isinstance(axis, tuple):
+                        for ax in sorted(axis):
+                            grad_to_add = np.expand_dims(grad_to_add, axis=ax)
+
+                max_mask = (self.data == np.max(self.data, axis=axis, keepdims=True))
+                num_max_elements = np.sum(max_mask, axis=axis, keepdims=True)
+                grad_distribution_mask = max_mask / num_max_elements 
+
+                self.grad += np.broadcast_to(grad_to_add, self.data.shape) * grad_distribution_mask
+        out._backward = _backward
+    return out
+
   def tanh(self):
     requires_grad = self.requires_grad
     out = Tensor((np.tanh(self.data)), (self, ), 'tanh', requires_grad=requires_grad)
