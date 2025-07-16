@@ -14,7 +14,7 @@ class Module:
 
 class Linear(Module):
   def __init__(self, n_in, n_out, non_lin=True):
-    self.w = Tensor((np.random.uniform(low=-0.1, high=0.1, size=(n_in, n_out))), requires_grad=True)
+    self.w = Tensor((np.random.randn(n_in, n_out) * np.sqrt(2.0 / n_in)), requires_grad=True)
     self.b = Tensor((np.random.uniform(low=-0.1, high=0.1, size=(1, n_out))), requires_grad=True)
     self.non_lin = non_lin
 
