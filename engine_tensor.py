@@ -118,16 +118,23 @@ class Tensor:
       out._backward = _backward
     return out
 
-  def sum(self):
+  def sum(self, axis=None, keepdims=False):
     requires_grad = self.requires_grad
-    out = Tensor((np.sum(self.data)), (self, ), 'sum', requires_grad=requires_grad)
+    out_data = np.sum(self.data, axis=axis, keepdims=keepdims)
+    out = Tensor(out_data, (self,), 'sum', requires_grad=requires_grad)
 
     if requires_grad:
-      def _backward():
-        if self.requires_grad:
-          self.grad += np.ones_like(self.data) * out.grad
-
-      out._backward = _backward
+        def _backward():
+            if self.requires_grad:
+                grad_to_add = out.grad
+                if axis is not None and not keepdims:
+                    if isinstance(axis, int):
+                        grad_to_add = np.expand_dims(grad_to_add, axis=axis)
+                    elif isinstance(axis, tuple):
+                        for ax in sorted(axis):
+                            grad_to_add = np.expand_dims(grad_to_add, axis=ax)
+                self.grad += np.broadcast_to(grad_to_add, self.data.shape)
+        out._backward = _backward
     return out
 
   def exp(self):
