@@ -1,106 +1,57 @@
-# Building Autograd from Scratch: A PyTorch-like API in Python
+# From Scalar Autograd to a Custom Tensor Framework
 
-## Description
+My journey into the complex world of deep learning got really exciting when I decided to see how it all truly worked and build a deep learning system myself from the very beginning. This project wasn't just about writing code for rules; it was about really exploring the basic math and computer ideas that make today's AI work.
 
-This project, inspired by Andrej Karpathy's _"Neural Networks: Zero to Hero"_ course, is a deep dive into the fundamental mechanics of modern deep learning frameworks. I've built **micrograd**, a lightweight automatic differentiation engine from scratch in Python.
+**Phase 1: Autograd with Scalar Operations (Inspired by Micrograd)**
 
-Think of it as a mini-PyTorch, designed to help you truly grasp how gradients are computed and propagated through a computational graph— the backbone of how neural networks learn.
+My first idea came from a really helpful video by Andrej Karpathy. He explained how a computer can automatically figure out how much each small change affects the final answer. This made me want to build that core idea myself. So, starting from the very basics, I made a simple version of this autograd system.
 
-This hands-on implementation demystifies concepts like the **chain rule**, **backpropagation**, and the structure of **multi-layer perceptrons (MLPs)**, providing a clear view of the operations happening under the hood in libraries like PyTorch and TensorFlow.
+This first part was super important. I carefully made a "Value" class, which was like the smallest building block of my math map. Each "Value" number held its actual number, but also its gradient, a link to the "Value" numbers that came before it, and what math step made it. This let me:
 
-## My Learning Journey
+- Construct a Dynamic Computational Graph: Every arithmetic operation (+, *, exp, ln, pow, etc.) on Value objects automatically added nodes and edges to this graph, tracking dependencies.
 
-My recent deep dive into Andrej Karpathy's 'Neural Networks: Zero to Hero' course truly cemented my understanding of deep learning's core. The cornerstone of this learning was building micrograd, my own automatic differentiation engine. This project wasn't just about coding; it was about truly grasping backpropagation and gradient descent from their mathematical roots. By meticulously creating the Value object – the fundamental unit that tracks both data and gradients – and then carefully implementing operator overloading for arithmetic operations, I directly saw how a computational graph is built, step by step. Integrating a topological sort for the backward() pass then revealed exactly how gradients flow and accumulate through this graph, providing a tangible understanding of the chain rule in action. What truly reinforced this knowledge was taking the framework I had engineered and, on my own initiative, building out a complete machine learning pipeline with it. From model definition to the forward pass, loss calculation, and ultimately, training parameters through my custom backpropagation – this end-to-end process confirmed my deep understanding of the entire learning cycle, revealing what truly operates beneath the surface of high-level libraries like PyTorch.
+- Implement the Chain Rule: The heart of backpropagation. For each operation, I defined a _backward() method. When called, this method applied the chain rule, multiplying the incoming gradient (out.grad) by the local derivative of the operation with respect to its inputs, and accumulating these contributions onto the grad of the parent Values. This solidified my understanding of how gradients flow backward through complex computations.
 
----
+- Master Topological Sort: A critical component for ensuring correct gradient propagation. Before the backward pass, I implemented a topological sort algorithm to order the Value objects. This ensured that the _backward() method of a Value was only called after all gradients from its dependent (child) operations had been computed and accumulated, guaranteeing accurate gradient updates.
 
-## Features & Components
+With this scalar autograd in place, I successfully built and trained a small neural network. It was incredibly rewarding to see gradients flow and the model learn, but a significant challenge quickly emerged: speed.
 
-### 1. The `Value` Object
+**Phase 2: Autograd with Tensors and Matrix Calculus**
 
-The core building block of micrograd is the `Value` object, akin to PyTorch's `Tensor` for scalar operations. Each `Value` object encapsulates:
+While that simple autograd system was great for learning, it was just too slow for real AI jobs, which use huge matrices. My next big goal was to make learning much, much faster by building a new autograd system based on Tensors.
 
-- `data`: The numerical value of the node.
-- `grad`: The gradient of the loss with respect to this `Value`, initialized to `0.0`.
-- `_prev`: A set of `Value` objects that were inputs to the operation that created this one.
-- `_op`: A string representing the operation (`+`, `*`, etc.).
-- `_backward()`: A dynamically defined function containing the local derivative calculation specific to the operation that created it, used to propagate gradients to `_prev`.
+This was a big jump into harder stuff. It meant I really needed to understand "matrix calculus" – which is just how you figure out the gradients for operations when you're working with matrices, not just scalars. I dug deep into the tricky parts of:
 
----
+- Derivatives of matrix multiplication.
 
-### 2. Operator Overloading
+- Gradients of summation and reduction operations across dimensions.
 
-The `Value` class overloads standard Python operators to enable intuitive expressions:
+- Broadcasting rules and their impact on gradient shapes.
 
-- Addition: `+`, `__add__`, `__radd__`
-- Multiplication: `*`, `__mul__`, `__rmul__`
-- Exponentiation: `**`, `__pow__`
-- Negation: `-`, `__neg__`
-- Subtraction: `-`, `__sub__`
-- Division: `/`, `__truediv__`
-- Functions: `tanh()`, `exp()`
+My new Tensor class was designed to handle multi-dimensional arrays, with operations like exp(), sum(), max(), and element-wise arithmetic now working across entire tensors. I also integrated features common in production frameworks:
 
-Each operator defines its own `_backward()` function, correctly accumulating gradients even for shared nodes using `+=`.
+- requires_grad: Allowing selective tracking of gradients, crucial for memory optimization and distinguishing trainable parameters from constant inputs.
 
----
+- Optimized Operations: Implementing sum(), max(), and other reduction/element-wise methods to correctly compute values and set up their corresponding _backward() functions for tensor gradients.
 
-### 3. Topological Sort for Backpropagation
+**Phase 3: Problem with Broadcasting**
 
-The `backward()` method on a `Value` object:
+The transition to tensors wasn't without challenges. I hit a significant roadblock when dealing with NumPy broadcasting (or the equivalent logic in a custom tensor implementation). Operations like adding a scalar to a matrix, or adding matrices of different but compatible shapes, require careful handling of gradient propagation. I had to thoroughly understand:
 
-- Performs a **topological sort** of the computational graph to ensure correct derivative application order.
-- Initializes the gradient of the output node to `1.0` (`dL/dL = 1`).
-- Iterates in reverse topological order, calling `_backward()` on each node.
+What broadcasting is: How NumPy implicitly expands dimensions to make shapes compatible for element-wise operations.
 
----
+How it affects gradients: When backpropagating through a broadcasted operation, gradients need to be correctly summed or "reduced" along the dimensions that were broadcasted in the forward pass. This required careful implementation of _backward() methods for operations involving broadcasting.
 
-### 4. Neural Network Modules
+Learning and fixing this specific issue was a testament to the iterative nature of software development and problem-solving in deep learning.
 
-Built on top of `Value`, micrograd includes:
+**Phase 4: Training Both Models**
 
-- **Neuron**: Computes a weighted sum of inputs plus bias, then applies `tanh`. Exposes weights and bias as parameters.
-- **Layer**: A collection of `Neuron`s, each receiving the same inputs and outputting a list of activations.
-- **MLP (Multi-Layer Perceptron)**: A stack of `Layer`s forming a feedforward neural network. Manages forward passes and provides a `parameters()` method for accessing all weights and biases.
+Finally, I put both my scalar and tensor frameworks to the test by training classification models custom datasets. Here are the results:
 
----
+- Scalar Model: Trained for 20 epochs, it took approximately 10 minutes and 51.86 seconds.
 
-## Installation & Usage
+- Tensor Model: Trained for 100 epochs (5x more iterations), it completed in just 2.36 seconds.
 
-### Clone the repository
+This showed a huge jump in how fast the AI could learn. It proved how much power and speed you get by moving from working with scalars to working with tensors. Plus, the tensor-based AI actually learned just as well, or even better, in a tiny fraction of the time. This showed that being fast doesn't mean you have to be less accurate.
 
-```bash
-git clone [YOUR_REPO_LINK_HERE]
-cd [your-project-directory]
-pip install -r requirements.txt
-```
-
-### Code Examples
-## Basic Value Operations & Backpropagation
-
-```bash
-from micrograd.engine import Value
-
-a = Value(-4.0, label='a')
-b = Value(2.0, label='b')
-
-# Forward pass
-c = a + b; c.label = 'c'
-d = a * b + b**3; d.label = 'd'
-e = c - d; e.label = 'e'
-f = e**2; f.label = 'f'
-g = f / 2.0; g.label = 'g'
-g += 10.0 / f; g.label = 'g'  
-
-print(f"Final output (g.data): {g.data:.4f}")
-
-# Backward pass
-g.backward()
-
-print(f"Gradient of g with respect to a (dg/da): {a.grad:.4f}")
-print(f"Gradient of g with respect to b (dg/db): {b.grad:.4f}")
-```
-
-### Acknowledgements
-
-This project was inspired by and built following the insightful micrograd lecture from Andrej Karpathy's "Neural Networks: Zero to Hero" course. His clear explanations were instrumental in understanding these complex topics.
-
+This project was a super valuable experience. It really made me understand how AI learns automatically, how math steps are mapped out, and the small tricks that make AI programs run fast. It gave me a deep respect for how clever and complicated today's AI systems are. It also made me much better at solving problems on my own, using math, and making things run faster. I'm really excited to use these basic ideas to take on even harder AI challenges.
